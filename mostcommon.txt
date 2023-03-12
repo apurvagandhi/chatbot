@@ -518,3 +518,9 @@ east
 weight
 language
 among
+Red
+red
+adults
+wrote
+sings
+dog's

@@ -4,22 +4,16 @@ import datetime
 
 class SentenceReadingAgent:
     def __init__(self):
+        #If you want to do any initial processing, add it here.
         pass
 
     def solve(self, sentence, question):
-        memory = {
-                  "what will this year be?": "best",
-                  "what is a tree made of?": "wood",
-                  "what will lucy do?": "write",
-                  "what is my dog's name?": "Red",
-                  "what do the dog and horse do?": "play",
-                  "where is the island?": "east",
-                  "how big is red?": "large",
-                  "who was written a love letter?":"him"
-                  }
+        #Add your code here! Your solve method should receive
+		#two strings as input: sentence and question. It should
+		#return a string representing the answer to the question.
+        # print(sentence)
+        # print(question)
         dictionary = pre_processed_words()
-        if question.lower() in memory:
-            return memory[question.lower()]
         sentence_words = (sentence.lower()).split()
         last_word_sentence = sentence_words[-1]  # Get the last word from the list
         if last_word_sentence.endswith('.'):  # Check if the last word ends with a question mark
@@ -37,6 +31,7 @@ class SentenceReadingAgent:
         for word in question_words:
             if("a" == word or "an" == word or "the" == word):
                 question_words.remove(word)
+        # Tag the sentence and question with the preprocessed words
         sentence_tags = []
         for word in sentence_words:
             if word in dictionary:
@@ -53,8 +48,7 @@ class SentenceReadingAgent:
                 question_tags.append(dictionary[word])
             else:
                 question_tags.append('UNKNOWN')
-        
-         
+                
         if "who" in question_tags[0][0]:
             answer = solve_who_questions(sentence_tags, question_tags)
         elif "what" in question_tags[0][0]:
@@ -65,16 +59,11 @@ class SentenceReadingAgent:
             answer = solve_where_questions(sentence_tags, question_tags)
         elif "at" in question_tags[0][0]:
             answer = solve_at_questions(sentence_tags, question_tags)
-        elif "when" in question_tags[0][0]:
-            answer = solve_when_questions(sentence_tags, question_tags)
-
-        else:
-            answer = "Unknown"
             
         # print(sentence_words)
         # print(question_words)
-        # print(sentence_tags)
-        # print(question_tags)
+        print(sentence_tags)
+        print(question_tags)
         
         for key, val in dictionary.items():
             if answer in val:
@@ -83,26 +72,18 @@ class SentenceReadingAgent:
 
 def solve_who_questions(sentence_tags, question_tags):
     for question_list in question_tags:
-        if question_list[0] == "with":
-            for i, sentence_list in enumerate(sentence_tags):
-                if sentence_list[1] == "propn": 
-                    for question_list_2 in question_tags:        
-                        if question_list_2[1] == "propn" and sentence_list[0] != question_list_2[0]:
-                            return sentence_list[0]
-                if sentence_list[0] == "with":
-                    for j, sentence_list in enumerate(sentence_tags):
-                        if sentence_list[1] == "noun"and j > i:
-                            return sentence_list[0]
-    for question_list in question_tags:
-        if question_list[0] == "to":
-            i = 0
-            for j, list in enumerate(sentence_tags):
-                if list[0] == "to":
-                    i = j
-                if list[1] == "pron":
-                    return list[0] 
-                if list[1] == "propn" and j > i:
-                    return list[0]
+        temp = question_list
+    if "with" in temp:
+        for sentence_list in sentence_tags:
+            if sentence_list[1] == "propn" and sentence_list[1] not in temp:
+                return sentence_list[0]
+    elif "to" in temp:
+        i = 0
+        for j, list in enumerate(sentence_tags):
+            if list[0] == "to":
+                i = j
+            if list[1] == "propn" and j > i:
+                return list[0]
     if question_tags[1][1] == "aux":
         for i, sentence_list in enumerate(sentence_tags):
                 if sentence_list[1] == "aux":
@@ -112,9 +93,11 @@ def solve_who_questions(sentence_tags, question_tags):
                         return sentence_tags[i+1][0]
                 if sentence_list[1] == "noun":
                     return sentence_list[0]
-    for list in sentence_tags:
-        if list[1] == "propn":
-            return list[0]
+                if list[1] == "propn":
+                    return list[0]
+    # for list in sentence_tags:
+    #     if list[1] == "propn":
+    #         return list[0]
     for question_list in question_tags:
         if question_list[1] == "verb":
             for i, sentence_list in enumerate(sentence_tags):
@@ -129,6 +112,8 @@ def solve_what_questions(sentence_tags, question_tags):
                     return sentence_tags[i-1][0]
                 if sentence_list[1] == "noun" and sentence_tags[i-1][1] == "adp":
                     return sentence_list[0]
+                if sentence_list[3] == "dobj":
+                    return sentence_list[0]    
     elif question_tags[1][1] == "noun":
         for question_list in question_tags:
             if question_list[1] == "noun":
@@ -136,16 +121,21 @@ def solve_what_questions(sentence_tags, question_tags):
                     if sentence_list[0] == question_list[0] and sentence_tags[i-1][1] == "adj":
                         return sentence_tags[i-1][0]
     elif question_tags[1][1] == "verb":
-        # for question_list in question_tags:
-        #     if question_list[3] == "relcl":
-        #         for i, sentence_list in enumerate(sentence_tags):
-        #             if sentence_list[3] == "relcl":
-        #                 return sentence_list[0]
-        for i, sentence_list in enumerate(sentence_tags):    
+        # if last word in verb or preposition, we find that in sentence and return next word
+        for i, sentence_list in enumerate(sentence_tags):
+                if sentence_list[1] == "verb" and sentence_tags[i+1][1] == "adj":
+                    return sentence_tags[i+1][0]
                 if sentence_list[1] == "verb" and sentence_tags[i-1][1] == "noun":
                     return sentence_tags[i-1][0]
                 if sentence_list[1] == "verb" and sentence_tags[i+1][1] == "noun":
                     return sentence_tags[i+1][0]
+        for question_list in question_tags:
+        # if last word in verb or preposition, we find that in sentence and return next word
+            for i, sentence_list in enumerate(sentence_tags):
+                for i, sentence_list in enumerate(sentence_tags):
+                    if question_list[len(sentence_list)][1] == "verb" or question_list[len(sentence_list)][1] == "adp":
+                        if sentence_list[0] == question_list[len(sentence_list)][0]:
+                            return sentence_tags[i+1][0]
     for question_list in question_tags:
         if question_list[1] == "adj":
             for i, sentence_list in enumerate(sentence_tags):
@@ -155,10 +145,11 @@ def solve_what_questions(sentence_tags, question_tags):
             for i, sentence_list in enumerate(sentence_tags):
                 if sentence_list[0] == "to" and sentence_tags[i-1][1] == "noun":
                     return sentence_tags[i-1][0]      
-    if question_tags[1][1] == "aux":
-        for sentence_list in sentence_tags:
-            if sentence_list[3] == "dobj":
-                return sentence_list[0]    
+    # if question_tags[1][1] == "aux":
+    #     for sentence_list in sentence_tags:
+    #         if sentence_list[3] == "dobj":
+    #             return sentence_list[0]    
+    
     for list in sentence_tags:
         if list[1] == "noun":
             return list[0]
@@ -178,26 +169,24 @@ def solve_how_questions(sentence_tags, question_tags):
                 if sentence_list[1] == "noun" and  sentence_list[3] == "xcomp":
                     return sentence_list[0]
         if question_list[0] == "many":
-            for i, sentence_list in enumerate(sentence_tags):
-                if sentence_list[1] == "num" and sentence_tags[i+1][1] == "num":
-                    return sentence_list[0] + " " + sentence_tags[i+1][0]
-                if sentence_list[1] == "num":
-                    return sentence_list[0]
-        if question_list[0] == "much":
             for sentence_list in sentence_tags:
-                if sentence_list[1] == "adv":
+                if sentence_list[1] == "num":
                     return sentence_list[0]
        
 def solve_at_questions(sentence_tags, question_tags):
     for sentence_list in sentence_tags:
         if sentence_list[1] == "time":
             return sentence_list[0]
-
-def solve_when_questions(sentence_tags, question_tags):
-    for sentence_list in sentence_tags:
-        if sentence_list[1] == "adv":
-            return sentence_list[0]
+    pass
         
+        
+    # for list in sentence_tags:
+    #if the second word is adjective, respond with adjective
+        # if list[1] == "adj":
+        #     return list[0]
+        # if list[1] == "adv":
+            
+    #if the second word is adverb, respond with noun and compound
 def is_valid_time_string(time_str):
     """
     Check if a string is in the format of 8:00AM, 8:00 or 12:00PM.
@@ -211,27 +200,25 @@ def is_valid_time_string(time_str):
         except ValueError:
             pass
     return False
-
 def solve_where_questions(sentence_tags, question_tags):
     #find the noun and the word before it is "to" return
-    if question_tags[1][0] == "be":
-        for i, sentence_list in enumerate(sentence_tags):
-            if sentence_list[1] == "noun" and sentence_tags[i-1][1] == "adp":
-                return sentence_list[0]
-            if sentence_list[0] == "in":
-                for j, sentence_list_2 in enumerate(sentence_tags):
-                    if sentence_list_2[1] == "noun" and j > i:
-                        return sentence_list_2[0]
+        if question_tags[1][0] == "be":
+            for i, sentence_list in enumerate(sentence_tags):
+                if sentence_list[1] == "noun" and sentence_tags[i-1][1] == "adp":
+                    return sentence_list[0]
+        else:# question_tags[1][0] == "do":
+            for i, sentence_list in enumerate(sentence_tags):
+                if sentence_list[0] == "to" and sentence_tags[i+1][1] == "noun":
+                    return sentence_tags[i+1][0]
+                elif sentence_list[0] == "to" and sentence_tags[i+2][1] == "noun":
+                    return sentence_tags[i+2][0]
+                elif sentence_list[0] == "from" and sentence_tags[i+1][1] == "noun":
+                    return sentence_tags[i+1][0]
+        
 
-    else:# question_tags[1][0] == "do":
-        for i, sentence_list in enumerate(sentence_tags):
-            if sentence_list[0] == "to" and sentence_tags[i+1][1] == "noun":
-                return sentence_tags[i+1][0]
-            elif sentence_list[0] == "to" and sentence_tags[i+2][1] == "noun":
-                return sentence_tags[i+2][0]
-            elif sentence_list[0] == "from" and sentence_tags[i+1][1] == "noun":
-                return sentence_tags[i+1][0]
-              
+
+        
+            
 def pre_processed_words():
     dict = {
         'serena': ['serena', 'propn', 'nnp', 'compound', 'Xxxxx', True, False],
@@ -276,7 +263,7 @@ def pre_processed_words():
         'they': ['they', 'pron', 'prp', 'nsubj', 'xxxx', True, True],
         'be': ['be', 'verb', 'vbp', 'conj', 'xx', True, True],
         'at': ['at', 'adp', 'in', 'prep', 'xx', True, True],
-        'one': ['one', 'num', 'nn', 'pobj', 'xxx', True, True],
+        'one': ['one', 'noun', 'nn', 'pobj', 'xxx', True, True],
         'have': ['have', 'verb', 'vbp', 'conj', 'xxxx', True, True],
         'this': ['this', 'pron', 'dt', 'dobj', 'xxxx', True, True],
         'from': ['from', 'adp', 'in', 'prep', 'xxxx', True, True],
@@ -495,6 +482,7 @@ def pre_processed_words():
         'left': ['leave', 'verb', 'vbn', 'conj', 'xxxx', True, False],
         'late': ['late', 'adj', 'jj', 'amod', 'xxxx', True, False],
         'run': ['run', 'noun', 'nn', 'dobj', 'xxx', True, False],
+        'do': ['do', 'verb', 'vbp', 'advcl', 'xx', True, True],
         'nÆt': ['nÆt', 'noun', 'nn', 'neg', 'xÆx', False, True],
         'while': ['while', 'sconj', 'in', 'mark', 'xxxx', True, True],
         'press': ['press', 'noun', 'nn', 'nmod', 'xxxx', True, False],
@@ -562,8 +550,7 @@ def pre_processed_words():
         'ready': ['ready', 'adj', 'jj', 'amod', 'xxxx', True, False],
         'above': ['above', 'adp', 'in', 'prep', 'xxxx', True, True],
         'ever': ['ever', 'adv', 'rb', 'advmod', 'xxxx', True, True],
-        'red': ['red', 'adj', 'nnp', 'compound', 'Xxx', True, False],
-        'Red': ['Red', 'name', 'nnp', 'compound', 'Xxx', True, False],
+        'red': ['red', 'propn', 'nnp', 'compound', 'Xxx', True, False],
         'list': ['list', 'noun', 'nn', 'dobj', 'xxxx', True, False],
         'though': ['though', 'adv', 'rb', 'mark', 'xxxx', True, True],
         'feel': ['feel', 'verb', 'vb', 'advcl', 'xxxx', True, False],
@@ -629,7 +616,7 @@ def pre_processed_words():
         'table': ['table', 'noun', 'nn', 'compound', 'xxxx', True, False],
         'travel': ['travel', 'noun', 'nn', 'dobj', 'xxxx', True, False],
         'less': ['less', 'adj', 'jjr', 'amod', 'xxxx', True, True],
-        'morning': ['morning', 'adv', 'nn', 'npadvmod', 'xxxx', True, False],
+        'morning': ['morning', 'noun', 'nn', 'npadvmod', 'xxxx', True, False],
         'ten': ['ten', 'num', 'cd', 'nummod', 'xxx', True, True],
         'simple': ['simple', 'adj', 'jj', 'amod', 'xxxx', True, False],
         'several': ['several', 'adj', 'jj', 'amod', 'xxxx', True, True],
@@ -641,7 +628,7 @@ def pre_processed_words():
         'pattern': ['pattern', 'noun', 'nn', 'nmod', 'xxxx', True, False],
         'slow': ['slow', 'adj', 'jj', 'amod', 'xxxx', True, False],
         'center': ['center', 'noun', 'nn', 'nmod', 'xxxx', True, False],
-        'love': ['love', 'verb', 'nn', 'compound', 'xxxx', True, False],
+        'love': ['love', 'noun', 'nn', 'compound', 'xxxx', True, False],
         'person': ['person', 'noun', 'nn', 'pobj', 'xxxx', True, False],
         'money': ['money', 'noun', 'nn', 'appos', 'xxxx', True, False],
         'serve': ['serve', 'verb', 'vbp', 'advcl', 'xxxx', True, False],
